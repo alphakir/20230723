@@ -1,0 +1,89 @@
+Sub ConvertCSVToExcel()
+    ' フォルダ選択ダイアログを表示
+    Dim folderDialog As FileDialog
+    Set folderDialog = Application.FileDialog(msoFileDialogFolderPicker)
+    
+    Dim selectedFolder As String
+    If folderDialog.Show = -1 Then ' ダイアログがOKボタンで閉じられた場合
+        selectedFolder = folderDialog.SelectedItems(1) & "\"
+    Else ' ダイアログがキャンセルされた場合
+        Exit Sub
+    End If
+
+    ' 選択されたフォルダ内のCSVファイルを処理
+    Dim fileSystem As Object
+    Set fileSystem = CreateObject("Scripting.FileSystemObject")
+
+    Dim folder As Object
+    Set folder = fileSystem.GetFolder(selectedFolder)
+
+    Dim excelApp As Excel.Application
+    Set excelApp = New Excel.Application
+    excelApp.Visible = False
+
+    Dim file As Object
+    For Each file In folder.Files
+        If file.Type = "CSV File" Then
+            Dim csvData As String
+            Open file.Path For Input As #1
+            csvData = Input$(LOF(1), 1)
+            Close #1
+
+            Dim csvLines As Variant
+            csvLines = Split(csvData, vbCrLf)
+
+            Dim newWorkbook As Excel.Workbook
+            Set newWorkbook = excelApp.Workbooks.Add
+
+            Dim newWorksheet As Excel.Worksheet
+            Set newWorksheet = newWorkbook.Sheets(1)
+
+            Dim rowCounter As Long
+            rowCounter = 1
+
+            Dim line As Variant
+            For Each line In csvLines
+                Dim csvValues As Variant
+                csvValues = Split(line, "|")
+
+                Dim columnCounter As Long
+                columnCounter = 1
+
+                Dim value As Variant
+                For Each value In csvValues
+                    newWorksheet.Cells(rowCounter, columnCounter).Value = value
+                    columnCounter = columnCounter + 1
+                Next value
+
+                rowCounter = rowCounter + 1
+            Next line
+
+            ' 新しいExcelファイルを保存
+            Dim saveFilePath As String
+            saveFilePath = selectedFolder & file.Name & ".xlsx"
+            newWorkbook.SaveAs saveFilePath
+            newWorkbook.Close
+
+            ' リソースの解放
+            Set newWorksheet = Nothing
+            Set newWorkbook = Nothing
+        End If
+    Next file
+
+    excelApp.Quit
+
+    ' リソースの解放
+    Set excelApp = Nothing
+    Set folder = Nothing
+    Set fileSystem = Nothing
+
+    ' 完了メッセージを表示
+    MsgBox "CSVファイルの変換が完了しました。", vbInformation, "完了"
+End Sub
+
+
+'注意点:
+
+'このコードはVBAマクロとしてExcelファイル内で実行することを想定しています。
+'実行前に、ファイルダイアログを表示するために「Microsoft Office xx.0 Object Library」を参照設定してください。（xxは利用しているOfficeのバージョンによって異なります）
+'ファイルの区切り文字が実際には「|」ではなく、他の文字（例: カンマ）の場合は、コード内のSplit関数の第2引数を適切な文字列に変更してください。
