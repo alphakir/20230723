@@ -19,15 +19,16 @@ Sub ImportTextFilesToExcel()
         Exit Sub ' キャンセルされた場合は処理を終了する
     End If
     
-    ' 新しいExcelファイルを作成する
-    Set newWorkbook = Workbooks.Add
-    Set newWorksheet = newWorkbook.Sheets(1)
-    
     ' フォルダ内のtxtファイルを取得して処理する
     textFile = Dir(selectedFolder & "\*.txt")
-    rowIndex = 1
     
     Do While textFile <> ""
+        ' 新しいExcelファイルを作成する
+        Set newWorkbook = Workbooks.Add
+        Set newWorksheet = newWorkbook.Sheets(1)
+        
+        rowIndex = 1
+        
         ' テキストファイルを開いてデータを取得する
         Open selectedFolder & "\" & textFile For Input As #1
         Do While Not EOF(1)
@@ -43,24 +44,13 @@ Sub ImportTextFilesToExcel()
         Loop
         Close #1
         
+        ' Excelファイルを保存する
+        newWorkbook.SaveAs selectedFolder & "\" & Replace(textFile, ".txt", ".xlsx")
+        newWorkbook.Close
+        
         textFile = Dir ' 次のファイルを取得する
     Loop
     
-    ' Excelファイルを保存する
-    Dim saveFileDialog As FileDialog
-    Set saveFileDialog = Application.FileDialog(msoFileDialogSaveAs)
-    saveFileDialog.Title = "保存先を選択してください"
-    saveFileDialog.Show
-    newWorkbook.SaveAs saveFileDialog.SelectedItems(1)
-    
     ' メッセージを表示して終了する
     MsgBox "処理が完了しました。", vbInformation
-    newWorkbook.Close
 End Sub
-
-'注意事項:
-
-'このコードは、Excelマクロとして実行してください。VBAエディタに貼り付けて、実行したいマクロのショートカットキーを割り当てることができます。
-'フォルダ内のテキストファイルは、| (パイプ) 文字で値を区切っている必要があります。
-'テキストファイルは1つのシートに結合され、新しいExcelファイルとして保存されます。
-'マクロを実行する前に、データが上書きされないように注意してください。
